@@ -4,14 +4,12 @@ class Explorer {
     this.ctx = this.canvas.getContext('2d');
   }
 
-  path = '';
-  newPath = '';
-  seperator = '';
+  dirRoute = [''];
+  seperator = '/';
   folders = [];
   files = [];
   zipFile = '';
-  route = [];
-  newRoute = [];
+  zipRoute = [];
 
   loading = false;
   dirty = false;
@@ -35,12 +33,18 @@ class Explorer {
     return ext === '.zip';
   }
 
-  exts = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.frames'];
+  exts = ['.jpg', '.jpeg', '.png', '.gif', '.bmp'];
   isImage(name) {
     if (name.lastIndexOf('.') < 0) return false;
     let ext = name.substr(name.lastIndexOf('.')).toLowerCase();
     if (this.exts.indexOf(ext) < 0) return false;
     return true;
+  }
+
+  isUgoira(name) {
+    if (name.lastIndexOf('.') < 0) return false;
+    let ext = name.substr(name.lastIndexOf('.')).toLowerCase();
+    return ext === '.frames';
   }
 
   setImage(data) {

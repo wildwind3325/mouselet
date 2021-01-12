@@ -39,7 +39,7 @@ export default {
   data() {
     return {
       viewMode: false,
-      scaleMode: 'free',
+      scaleMode: 'auto1',
       wheelDelta: 0,
       canvasWidth: 100,
       canvasHeight: 100,

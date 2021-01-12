@@ -67,7 +67,7 @@ var zip = {
             for (let key in tree) {
               tree[key].folders.sort();
               tree[key].files.sort((f1, f2) => {
-                return f1.name.compareTo(f2.name);
+                return f1.name.localeCompare(f2.name);
               });
             }
             resolve();
@@ -85,6 +85,7 @@ var zip = {
               let p = entry.fileName.lastIndexOf('/');
               let parent = '/';
               if (p >= 0) parent = entry.fileName.substr(0, p + 1);
+              if (!tree[parent]) tree[parent] = { folders: [], files: [] };
               tree[parent].files.push({
                 name: entry.fileName.substr(p + 1, entry.fileName.length - p - 1),
                 size: entry.uncompressedSize,
@@ -116,11 +117,33 @@ var zip = {
       files: tree[parent].files
     };
   },
+  load(entryName) {
+    return new Promise((resolve, reject) => {
+      try {
+        let entry = entries[entryName];
+        zf.openReadStream(entry, function (err, stream) {
+          if (err) reject(err);
+          let buffer = [];
+          stream.on('data', data => buffer.push(data));
+          stream.on('end', function () {
+            resolve(Buffer.concat(buffer));
+          });
+          stream.on('error', function () {
+            reject(new Error('Read stream error.'));
+          });
+        });
+      } catch (err) {
+        reject(err);
+      }
+    });
+  },
   close() {
-    if (zf) {
-      zf.close();
-      zf = null;
-    }
+    try {
+      if (zf) {
+        zf.close();
+        zf = null;
+      }
+    } catch (err) { }
     tree = {};
     entries = {};
   }

@@ -36,6 +36,20 @@ var file = {
       val = val.substr(0, val.length - 1);
     }
     return val + ' ' + units[range];
+  },
+  genPath(route) {
+    let seperator;
+    if (process.platform.startsWith('win')) {
+      seperator = '\\';
+    } else {
+      seperator = '/';
+    }
+    let dir = '';
+    for (let i = 0; i < route.length; i++) {
+      if (process.platform.startsWith('win') && i === 0) continue;
+      dir += route[i] + seperator;
+    }
+    return dir;
   }
 };
 

@@ -3,6 +3,7 @@
     <div>
       <ButtonGroup>
         <Button type="primary" icon="ios-arrow-round-up" @click="up">Up</Button>
+        <Button type="info" icon="ios-refresh" @click="refresh">Refresh</Button>
       </ButtonGroup>
     </div>
     <div>
@@ -50,14 +51,9 @@ export default {
     this.$bus.$on('resize', this.fixSize);
     this.fixSize();
     let res = await this.$http.post('/api/explorer/init');
-    if (!res.data.success) {
-      this.$Message.error('初始化失败：' + res.data.message);
-      return;
-    }
-    explorer.newPath = res.data.path;
-    explorer.seperator = res.data.seperator;
-    await this.refresh();
+    if (res.data.success) explorer.seperator = res.data.seperator;
     this.updatePath();
+    await this.refresh();
     setInterval(this.getImage, 50);
     this.$bus.$on('wheel', this.wheel);
   },
@@ -70,33 +66,101 @@ export default {
       this.height = Math.floor(document.body.getBoundingClientRect().height) - 175;
     },
     updatePath() {
-      let str = explorer.path;
+      let str = '';
+      for (let i = 0; i < explorer.dirRoute.length; i++) {
+        if (explorer.seperator === '\\' && i === 0) continue;
+        str += explorer.dirRoute[i] + explorer.seperator;
+      }
       if (explorer.zipFile) {
         str += explorer.zipFile + explorer.seperator;
-        for (let i = 0; i < explorer.route.length; i++) {
-          str += explorer.route[i] + explorer.seperator;
+        for (let i = 0; i < explorer.zipRoute.length; i++) {
+          str += explorer.zipRoute[i] + explorer.seperator;
         }
       }
       this.path = str;
     },
-    async refresh() {
+    async refresh(target) {
+      if (this.fetching) return;
+      let newDirRoute = explorer.dirRoute, newZipFile = explorer.zipFile, newZipRoute = explorer.zipRoute;
+      if (target === '..') {
+        if (explorer.zipFile) {
+          if (explorer.zipRoute.length > 0) {
+            newZipRoute = explorer.zipRoute.slice(0, explorer.zipRoute.length - 1);
+          } else {
+            newZipFile = '';
+            try {
+              await this.$http.post('/api/explorer/zip/close');
+            } catch (err) { }
+          }
+        } else {
+          if (explorer.dirRoute.length > 1) {
+            newDirRoute = explorer.dirRoute.slice(0, explorer.dirRoute.length - 1);
+          } else { return; }
+        }
+      } else if (Number.isInteger(target)) {
+        let item = this.items[target];
+        if (explorer.zipFile) {
+          if (target < explorer.folders.length) {
+            newZipRoute = explorer.zipRoute.slice(0);
+            newZipRoute.push(explorer.folders[target]);
+          } else { return; }
+        } else {
+          if (target < explorer.folders.length) {
+            newDirRoute = explorer.dirRoute.slice(0);
+            newDirRoute.push(explorer.folders[target]);
+          } else if (explorer.isZip(item.name)) {
+            try {
+              this.fetching = true;
+              let zipRes = await this.$http.post('/api/explorer/zip/open', {
+                file: this.path + item.name
+              });
+              if (!zipRes.data.success) {
+                this.$Message.error('Open zip failed: ' + zipRes.data.message);
+                return;
+              }
+            } catch (err) {
+              this.$Message.error('Open zip failed: ' + err.message);
+              return;
+            } finally {
+              this.fetching = false;
+            }
+            newZipFile = item.name;
+          } else { return; }
+        }
+      }
       let res = await this.$http.post('/api/explorer/refresh', {
-        path: explorer.newPath,
-        zipFile: explorer.zipFile,
-        route: explorer.newRoute
+        dirRoute: newDirRoute,
+        zipFile: newZipFile,
+        zipRoute: newZipRoute
       });
       if (!res.data.success) {
-        this.$Message.error('获取失败：' + res.data.message);
+        this.$Message.error('Refresh failed: ' + res.data.message);
+        if (target === '..') {
+          explorer.dirRoute = newDirRoute;
+          explorer.zipFile = newZipFile;
+          explorer.zipRoute = newZipRoute;
+          this.updatePath();
+          explorer.folders = [];
+          explorer.files = [];
+          this.selectedIndex = -1;
+          this.selected = ''
+          this.items = [];
+          this.selection = [];
+        }
         return;
       }
-      explorer.path = explorer.newPath;
-      if (explorer.zipFile) explorer.route = explorer.newRoute;
-      this.updatePath();
+      if (target === '..' || Number.isInteger(target)) {
+        explorer.dirRoute = newDirRoute;
+        explorer.zipFile = newZipFile;
+        explorer.zipRoute = newZipRoute;
+        this.updatePath();
+      }
       explorer.folders = res.data.folders;
       explorer.files = res.data.files;
       this.selectedIndex = -1;
       this.selected = ''
       this.items = [];
+      this.selection = [];
       for (let i = 0; i < explorer.folders.length; i++) {
         this.items.push({
           name: '[' + explorer.folders[i] + ']',
@@ -111,25 +175,20 @@ export default {
       explorer.clear(true);
     },
     up() {
-      if (this.path === '' || (this.path === '/' && !explorer.zipFile) || this.fetching) return;
-      if (explorer.zipFile) {
-      }
-      let folder = this.path.substr(0, this.path.length - 1);
-      this.refresh(this.path.substr(0, folder.lastIndexOf(explorer.seperator) + 1));
+      this.refresh('..');
     },
     highlight(row, index) {
       if (this.selectedIndex === index) return 'ivu-table-row-highlight';
       return '';
     },
     navigate(row, index) {
-      if (index >= explorer.folders.length || this.fetching) return;
-      this.refresh(this.path + explorer.folders[index] + explorer.seperator);
+      this.refresh(index);
     },
     select(row, index) {
       if (this.selectedIndex === index || this.fetching) return;
       this.selectedIndex = index;
       this.selected = '';
-      if (row.size > 0 && explorer.isImage(row.name)) {
+      if (row.size > 0 && (explorer.isImage(row.name) || (explorer.isUgoira(row.name) && !explorer.zipFile))) {
         explorer.clear(false);
         this.selected = row.name;
       } else {
@@ -151,7 +210,12 @@ export default {
       let current = this.selected;
       try {
         this.fetching = true;
-        let res = await this.$http.post('/api/explorer/image', { file: this.path + this.selected });
+        let res = await this.$http.post('/api/explorer/image', {
+          dirRoute: explorer.dirRoute,
+          zipFile: explorer.zipFile,
+          zipRoute: explorer.zipRoute,
+          file: this.selected
+        });
         if (res.data.success) {
           if (res.data.ugoira) {
             await explorer.setUgoira(res.data.ugoira);
@@ -163,6 +227,7 @@ export default {
           return;
         }
       } catch (err) {
+        this.$Message.error('Get image failed: ' + err.message);
       } finally {
         if (current == this.selected) this.selected = '';
         this.fetching = false;
