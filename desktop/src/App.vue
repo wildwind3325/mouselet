@@ -7,8 +7,8 @@
         <Radio label="free">Free</Radio>
       </RadioGroup>
       <ButtonGroup>
-        <Button type="success" icon="ios-remove"></Button>
-        <Button type="success" icon="ios-add"></Button>
+        <Button type="warning" icon="ios-remove" @click="zoomOut"></Button>
+        <Button type="warning" icon="ios-add" @click="zoomIn"></Button>
         <Button type="primary" icon="ios-play" @click="playAnime"></Button>
         <Button type="primary" icon="ios-pause" @click="pauseAnime"></Button>
         <Button type="info" icon="ios-arrow-back" @click="wheelDelta -= 3"></Button>
@@ -16,7 +16,7 @@
       </ButtonGroup>
     </div>
     <canvas ref="canvas" :width="canvasWidth" :height="canvasHeight" class="board" @dblclick="switchViewMode"
-      @wheel="wheel"></canvas>
+      @wheel="wheel" @mousedown="startMove" @mousemove="doMove" @mouseup="stopMove" @mouseout="stopMove"></canvas>
     <div v-show="!viewMode" class="sider">
       <Tabs v-model="activeTab" type="card" :animated="false">
         <TabPane :label="item.lable" v-for="(item, index) in tabs" :key="index">
@@ -39,7 +39,8 @@ export default {
   data() {
     return {
       viewMode: false,
-      scaleMode: 'auto1',
+      scaleMode: 'free',
+      scale: 100,
       wheelDelta: 0,
       canvasWidth: 100,
       canvasHeight: 100,
@@ -77,13 +78,65 @@ export default {
       if (explorer.image) {
         this.viewMode = !this.viewMode;
         explorer.dirty = true;
-      }
+      } else { this.viewMode = false; }
     },
     switchScaleMode() {
-      if (this.viewMode) explorer.dirty = true;
+      if (this.scaleMode === 'free') explorer.scale = 100;
+      if (explorer.image) explorer.dirty = true;
     },
     wheel(event) {
-      this.wheelDelta += event.deltaY;
+      if (!event.ctrlKey) {
+        this.wheelDelta += event.deltaY;
+      } else {
+        event.preventDefault();
+        if (explorer.image) {
+          if (event.deltaY > 0 && explorer.scale > 25) {
+            explorer.scale -= 25;
+            explorer.dirty = true;
+          }
+          else if (event.deltaY < 0 && explorer.scale < 200) {
+            explorer.scale += 25;
+            explorer.dirty = true;
+          }
+        }
+      }
+    },
+    startMove(event) {
+      if (!explorer.image || this.scaleMode === 'auto1') return;
+      explorer.x0 = event.clientX;
+      explorer.y0 = event.clientY;
+      explorer.moving = true;
+    },
+    doMove(event) {
+      if (!explorer.image || !explorer.moving || this.scaleMode === 'auto1') return;
+      explorer.x1 = event.clientX;
+      explorer.y1 = event.clientY;
+      explorer.dirty = true;
+    },
+    stopMove(event) {
+      if (!explorer.image || !explorer.moving || this.scaleMode === 'auto1') return;
+      let width = this.canvasWidth, height = this.canvasHeight;
+      if (!this.viewMode) width -= 500;
+      let rect = explorer.getPaintArea(this.scaleMode, width, height);
+      explorer.ox = rect[0] > 0 ? 0 : rect[0];
+      explorer.oy = rect[1] > 0 ? 0 : rect[1];
+      explorer.x0 = 0;
+      explorer.y0 = 0;
+      explorer.x1 = 0;
+      explorer.y1 = 0;
+      explorer.moving = false;
+    },
+    zoomOut() {
+      if (explorer.image && explorer.scale > 25) {
+        explorer.scale -= 25;
+        explorer.dirty = true;
+      }
+    },
+    zoomIn() {
+      if (explorer.image && explorer.scale < 200) {
+        explorer.scale += 25;
+        explorer.dirty = true;
+      }
     },
     playAnime() {
       explorer.playing = true;
@@ -100,36 +153,23 @@ export default {
       if (!explorer.dirty) return;
       explorer.dirty = false;
       if (!explorer.image) {
-        this.ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
+        if (this.viewMode) {
+          this.ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
+        } else {
+          this.ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
+        }
         return;
       }
       let image = explorer.image;
       let width = this.canvasWidth, height = this.canvasHeight;
       if (!this.viewMode) width -= 500;
-      let sx = 0, sy = 0, swidth = image.width, sheight = image.height;
-      let x = 0, y = 0, w = image.width, h = image.height;
-      if (image.width > width || image.height > height) {
-        if (width * image.height > height * image.width) {
-          w = Math.floor(image.width * height / image.height);
-          h = height;
-        }
-        else {
-          w = width;
-          h = Math.floor(image.height * width / image.width);
-        }
-      }
-      if (width > w) {
-        x = Math.floor((width - w) / 2);
-      }
-      if (height > h) {
-        y = Math.floor((height - h) / 2);
-      }
+      let rect = explorer.getPaintArea(this.scaleMode, width, height);
       if (this.viewMode) {
         this.ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
       } else {
         this.ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
       }
-      this.ctx.drawImage(image, sx, sy, swidth, sheight, x, y, w, h);
+      this.ctx.drawImage(image, 0, 0, image.width, image.height, ...rect);
     }
   }
 }
