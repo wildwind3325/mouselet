@@ -7,6 +7,7 @@
         <Radio label="free">Free</Radio>
       </RadioGroup>
       <ButtonGroup>
+        <Button type="warning" icon="ios-qr-scanner" @click="switchViewMode"></Button>
         <Button type="warning" icon="ios-remove" @click="zoomOut"></Button>
         <Button type="warning" icon="ios-add" @click="zoomIn"></Button>
         <Button type="primary" icon="ios-play" @click="playAnime"></Button>
@@ -77,6 +78,7 @@ export default {
     switchViewMode() {
       if (explorer.image) {
         this.viewMode = !this.viewMode;
+        explorer.resetLocation();
         explorer.dirty = true;
       } else { this.viewMode = false; }
     },
@@ -153,11 +155,7 @@ export default {
       if (!explorer.dirty) return;
       explorer.dirty = false;
       if (!explorer.image) {
-        if (this.viewMode) {
-          this.ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
-        } else {
-          this.ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
-        }
+        this.ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
         return;
       }
       let image = explorer.image;

@@ -224,6 +224,7 @@ export default {
           } else {
             await explorer.setImage(res.data.image);
           }
+          explorer.resetLocation();
           return;
         }
       } catch (err) {

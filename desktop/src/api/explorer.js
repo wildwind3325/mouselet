@@ -256,6 +256,13 @@ class Explorer {
     }
     return [x, y, w, h];
   }
+
+  resetLocation() {
+    this.ox = 0;
+    this.oy = 0;
+    this.x0 = 0;
+    this.y0 = 0;
+  }
 }
 
 export default new Explorer();
