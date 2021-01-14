@@ -6,14 +6,20 @@ var mimes = {
   '.bmp': 'image/bmp'
 };
 
+var m_exts = ['.mp3', '.mp4', '.webm', '.ogg', '.wav'];
+
 var file = {
   getExtension(name) {
-    if (name.lastIndexOf('.') < 0) return false;
+    if (name.lastIndexOf('.') < 0) return '';
     return name.substr(name.lastIndexOf('.')).toLowerCase();
   },
   getImageMime(name) {
     let ext = this.getExtension(name);
     return mimes[ext];
+  },
+  isMedia(name) {
+    let ext = this.getExtension(name);
+    return m_exts.indexOf(ext) >= 0;
   },
   getSizeString(size) {
     let range = 0;

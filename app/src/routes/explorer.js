@@ -144,4 +144,12 @@ router.post('/zip/close', function (req, res, next) {
   res.send({ success: true });
 });
 
+router.get('/media', function (req, res, next) {
+  if (file.isMedia(req.query.file)) {
+    res.sendFile(req.query.file);
+  } else {
+    res.status(403).end();
+  }
+})
+
 module.exports = router;

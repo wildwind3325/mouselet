@@ -2,6 +2,8 @@ class Explorer {
   constructor() {
     this.canvas = document.createElement('canvas');
     this.ctx = this.canvas.getContext('2d');
+    this.i_exts = ['.jpg', '.jpeg', '.png', '.gif', '.bmp'];
+    this.m_exts = ['.mp3', '.mp4', '.webm', '.ogg', '.wav'];
   }
 
   dirRoute = [''];
@@ -42,11 +44,10 @@ class Explorer {
     return ext === '.zip';
   }
 
-  exts = ['.jpg', '.jpeg', '.png', '.gif', '.bmp'];
   isImage(name) {
     if (name.lastIndexOf('.') < 0) return false;
     let ext = name.substr(name.lastIndexOf('.')).toLowerCase();
-    if (this.exts.indexOf(ext) < 0) return false;
+    if (this.i_exts.indexOf(ext) < 0) return false;
     return true;
   }
 
@@ -54,6 +55,13 @@ class Explorer {
     if (name.lastIndexOf('.') < 0) return false;
     let ext = name.substr(name.lastIndexOf('.')).toLowerCase();
     return ext === '.frames';
+  }
+
+  isMedia(name) {
+    if (name.lastIndexOf('.') < 0) return false;
+    let ext = name.substr(name.lastIndexOf('.')).toLowerCase();
+    if (this.m_exts.indexOf(ext) < 0) return false;
+    return true;
   }
 
   setImage(data) {

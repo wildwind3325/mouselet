@@ -21,9 +21,10 @@
     <div v-show="!viewMode" class="sider">
       <Tabs v-model="activeTab" type="card" :animated="false">
         <TabPane :label="item.lable" v-for="(item, index) in tabs" :key="index">
-          <component :is="item.component" :actived="index ===  activeTab" @tab-close="tabClose">
+          <component :is="item.component" :actived="index ===  activeTab" :options="item.options" @tab-new="tabNew">
           </component>
         </TabPane>
+        <Button slot="extra" type="error" icon="ios-close" @click="tabClose"></Button>
       </Tabs>
     </div>
   </div>
@@ -32,10 +33,11 @@
 <script>
 import explorer from './api/explorer';
 import MainPanel from './component/MainPanel';
+import Player from './component/Player';
 export default {
   name: 'App',
   components: {
-    MainPanel
+    MainPanel, Player
   },
   data() {
     return {
@@ -49,7 +51,8 @@ export default {
       activeTab: 0,
       tabs: [{
         lable: 'Explorer',
-        component: 'MainPanel'
+        component: 'MainPanel',
+        options: {}
       }]
     };
   },
@@ -72,8 +75,17 @@ export default {
       explorer.dirty = true;
     },
     tabClose() {
+      if (this.activeTab === 0) return;
       this.activeTab -= 1;
       this.tabs.splice(this.activeTab + 1, 1);
+    },
+    tabNew(name, comp, options) {
+      this.tabs.push({
+        lable: name,
+        component: comp,
+        options: options
+      });
+      this.activeTab = this.tabs.length - 1;
     },
     switchViewMode() {
       if (explorer.image) {
@@ -189,6 +201,7 @@ export default {
   top: 0px;
   left: 0px;
   background-color: white;
+  overflow: hidden;
 }
 .sider {
   width: 500px;

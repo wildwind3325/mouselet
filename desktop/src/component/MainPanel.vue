@@ -21,7 +21,8 @@ import explorer from '../api/explorer';
 export default {
   name: 'MainPanel',
   props: {
-    actived: Boolean
+    actived: Boolean,
+    options: Object
   },
   data() {
     return {
@@ -125,7 +126,14 @@ export default {
               this.fetching = false;
             }
             newZipFile = item.name;
-          } else { return; }
+          } else {
+            if (explorer.isMedia(item.name)) {
+              let file = explorer.dirRoute.join(explorer.seperator) + explorer.seperator + item.name;
+              if (explorer.seperator === '\\') file = file.substr(1);
+              this.$emit('tab-new', 'Player', 'Player', { file: file });
+            }
+            return;
+          }
         }
       }
       let res = await this.$http.post('/api/explorer/refresh', {

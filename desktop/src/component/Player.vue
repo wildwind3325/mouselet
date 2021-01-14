@@ -1,6 +1,8 @@
 <template>
-  <div class="div-center">
-    Player
+  <div class="div-center" style="height: calc(100vh - 80px);">
+    <video autoplay controls>
+      <source :src="'/api/explorer/media?file=' + options.file">
+    </video>
   </div>
 </template>
 
@@ -8,11 +10,8 @@
 export default {
   name: 'Player',
   props: {
-    actived: Boolean
-  },
-  data() {
-    return {};
-  },
-  mounted() { }
+    actived: Boolean,
+    options: Object
+  }
 };
 </script>
