@@ -150,6 +150,15 @@ router.get('/media', function (req, res, next) {
   } else {
     res.status(403).end();
   }
-})
+});
+
+router.post('/open', function (req, res, next) {
+  try {
+    cp.exec(req.body.file);
+  } catch (err) { }
+  res.send({
+    success: true
+  });
+});
 
 module.exports = router;

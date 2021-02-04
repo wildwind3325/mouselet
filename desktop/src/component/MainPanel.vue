@@ -35,7 +35,7 @@ export default {
       }, {
         title: 'Name',
         key: 'name',
-        width: 320
+        width: 300
       }, {
         title: 'Size',
         key: 'fsize',
@@ -67,18 +67,7 @@ export default {
       this.height = Math.floor(document.body.getBoundingClientRect().height) - 175;
     },
     updatePath() {
-      let str = '';
-      for (let i = 0; i < explorer.dirRoute.length; i++) {
-        if (explorer.seperator === '\\' && i === 0) continue;
-        str += explorer.dirRoute[i] + explorer.seperator;
-      }
-      if (explorer.zipFile) {
-        str += explorer.zipFile + explorer.seperator;
-        for (let i = 0; i < explorer.zipRoute.length; i++) {
-          str += explorer.zipRoute[i] + explorer.seperator;
-        }
-      }
-      this.path = str;
+      this.path = explorer.getPath() + explorer.getZipPath();
     },
     async refresh(target) {
       if (this.fetching) return;
@@ -127,10 +116,11 @@ export default {
             }
             newZipFile = item.name;
           } else {
+            let file = explorer.getPath() + item.name;
             if (explorer.isMedia(item.name)) {
-              let file = explorer.dirRoute.join(explorer.seperator) + explorer.seperator + item.name;
-              if (explorer.seperator === '\\') file = file.substr(1);
               this.$emit('tab-new', 'Player', 'Player', { file: file });
+            } else {
+              await this.$http.post('/api/explorer/open', { file: file });
             }
             return;
           }

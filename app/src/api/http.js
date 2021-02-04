@@ -15,7 +15,6 @@ var http = {
         url: url,
         headers: options.headers || {},
         proxy: options.proxy || '',
-        timeout: (options.timeout || 10) * 1000,
         rejectUnauthorized: false
       }, (error, response, body) => {
         if (error) {
@@ -35,9 +34,27 @@ var http = {
         form: form,
         headers: options.headers || {},
         proxy: options.proxy || '',
-        timeout: (options.timeout || 10) * 1000,
         followRedirect: false,
         rejectUnauthorized: false
+      }, (error, response, body) => {
+        if (error) {
+          reject(error);
+        } else {
+          resolve(response);
+        }
+      });
+    });
+  },
+  download(url, options) {
+    options = options || {};
+    return new Promise((resolve, reject) => {
+      worker({
+        method: options.method || 'GET',
+        url: url,
+        headers: options.headers || {},
+        proxy: options.proxy || '',
+        rejectUnauthorized: false,
+        encoding: null
       }, (error, response, body) => {
         if (error) {
           reject(error);

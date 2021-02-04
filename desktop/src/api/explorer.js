@@ -38,6 +38,26 @@ class Explorer {
   y1 = 0;
   moving = false;
 
+  getPath() {
+    let str = '';
+    for (let i = 0; i < this.dirRoute.length; i++) {
+      if (this.seperator === '\\' && i === 0) continue;
+      str += this.dirRoute[i] + this.seperator;
+    }
+    return str;
+  }
+
+  getZipPath() {
+    let str = '';
+    if (this.zipFile) {
+      str += this.zipFile + this.seperator;
+      for (let i = 0; i < this.zipRoute.length; i++) {
+        str += this.zipRoute[i] + this.seperator;
+      }
+    }
+    return str;
+  }
+
   isZip(name) {
     if (name.lastIndexOf('.') < 0) return false;
     let ext = name.substr(name.lastIndexOf('.')).toLowerCase();

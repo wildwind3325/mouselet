@@ -15,6 +15,9 @@
         <Button type="info" icon="ios-arrow-back" @click="wheelDelta -= 3"></Button>
         <Button type="info" icon="ios-arrow-forward" @click="wheelDelta += 3"></Button>
       </ButtonGroup>
+      <ButtonGroup>
+        <Button type="primary" icon="ios-at" @click="openEH">EH</Button>
+      </ButtonGroup>
     </div>
     <canvas ref="canvas" :width="canvasWidth" :height="canvasHeight" class="board" @dblclick="switchViewMode"
       @wheel="wheel" @mousedown="startMove" @mousemove="doMove" @mouseup="stopMove" @mouseout="stopMove"></canvas>
@@ -34,10 +37,11 @@
 import explorer from './api/explorer';
 import MainPanel from './component/MainPanel';
 import Player from './component/Player';
+import EH from './component/EH';
 export default {
   name: 'App',
   components: {
-    MainPanel, Player
+    MainPanel, Player, EH
   },
   data() {
     return {
@@ -180,6 +184,9 @@ export default {
         this.ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
       }
       this.ctx.drawImage(image, 0, 0, image.width, image.height, ...rect);
+    },
+    openEH() {
+      this.tabNew('EH', 'EH', {});
     }
   }
 }
@@ -205,6 +212,7 @@ export default {
 }
 .sider {
   width: 500px;
+  padding-right: 10px;
   height: calc(100vh - 32px);
   position: absolute;
   top: 32px;
