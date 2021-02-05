@@ -16,6 +16,7 @@
         <Button type="info" icon="ios-arrow-forward" @click="wheelDelta += 3"></Button>
       </ButtonGroup>
       <ButtonGroup>
+        <Button type="primary" icon="ios-at" @click="openConfig">Config</Button>
         <Button type="primary" icon="ios-at" @click="openEH">EH</Button>
       </ButtonGroup>
     </div>
@@ -37,11 +38,12 @@
 import explorer from './api/explorer';
 import MainPanel from './component/MainPanel';
 import Player from './component/Player';
+import Config from './component/Config';
 import EH from './component/EH';
 export default {
   name: 'App',
   components: {
-    MainPanel, Player, EH
+    MainPanel, Player, Config, EH
   },
   data() {
     return {
@@ -184,6 +186,9 @@ export default {
         this.ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
       }
       this.ctx.drawImage(image, 0, 0, image.width, image.height, ...rect);
+    },
+    openConfig() {
+      this.tabNew('Config', 'Config', {});
     },
     openEH() {
       this.tabNew('EH', 'EH', {});
