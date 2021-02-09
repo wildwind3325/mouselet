@@ -1,6 +1,7 @@
 var request = require('request');
 
 const worker = request.defaults({
+  rejectUnauthorized: false,
   headers: {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:78.0) Gecko/20100101 Firefox/78.0'
   }
@@ -14,8 +15,7 @@ var http = {
         method: options.method || 'GET',
         url: url,
         headers: options.headers || {},
-        proxy: options.proxy || '',
-        rejectUnauthorized: false
+        proxy: options.proxy || ''
       }, (error, response, body) => {
         if (error) {
           reject(error);
@@ -34,8 +34,7 @@ var http = {
         form: form,
         headers: options.headers || {},
         proxy: options.proxy || '',
-        followRedirect: false,
-        rejectUnauthorized: false
+        followRedirect: false
       }, (error, response, body) => {
         if (error) {
           reject(error);
@@ -53,7 +52,6 @@ var http = {
         url: url,
         headers: options.headers || {},
         proxy: options.proxy || '',
-        rejectUnauthorized: false,
         encoding: null
       }, (error, response, body) => {
         if (error) {

@@ -13,3 +13,7 @@ body {
   justify-content: center;
   align-items: center;
 }
+
+.ivu-form-item {
+  margin-bottom: 5px;
+}
