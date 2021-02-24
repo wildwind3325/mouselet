@@ -10,8 +10,8 @@
         <Button type="warning" icon="ios-qr-scanner" @click="switchViewMode"></Button>
         <Button type="warning" icon="ios-remove" @click="zoomOut"></Button>
         <Button type="warning" icon="ios-add" @click="zoomIn"></Button>
-        <Button type="primary" icon="ios-play" @click="playAnime"></Button>
-        <Button type="primary" icon="ios-pause" @click="pauseAnime"></Button>
+        <Button type="primary" :icon="playIcon" @click="playAnime"></Button>
+        <Button type="primary" :icon="forwardIcon" @click="forwardAnime"></Button>
         <Button type="info" icon="ios-arrow-back" @click="wheelDelta -= 3"></Button>
         <Button type="info" icon="ios-arrow-forward" @click="wheelDelta += 3"></Button>
       </ButtonGroup>
@@ -35,6 +35,7 @@
 </template>
 
 <script>
+import config from './api/config';
 import explorer from './api/explorer';
 import MainPanel from './component/MainPanel';
 import Player from './component/Player';
@@ -49,7 +50,8 @@ export default {
     return {
       viewMode: false,
       scaleMode: 'free',
-      scale: 100,
+      playIcon: 'ios-pause',
+      forwardIcon: 'ios-arrow-dropleft',
       wheelDelta: 0,
       canvasWidth: 100,
       canvasHeight: 100,
@@ -62,7 +64,7 @@ export default {
       }]
     };
   },
-  mounted() {
+  async mounted() {
     window.onresize = () => {
       this.$bus.$emit('resize');
     };
@@ -70,6 +72,11 @@ export default {
     this.fixSize();
     this.ctx = this.$refs.canvas.getContext('2d');
     setInterval(this.paint, 50);
+    try {
+      let res = await this.$http.post('/api/common/config/load');
+      if (res.data.success) config.load(res.data.data);
+      console.log(res.data.data);
+    } catch (err) { }
   },
   beforeDestroy() {
     this.$bus.$off('resize', this.fixSize);
@@ -159,10 +166,14 @@ export default {
       }
     },
     playAnime() {
-      explorer.playing = true;
+      explorer.playing = !explorer.playing;
+      if (explorer.playing) this.playIcon = 'ios-pause';
+      else this.playIcon = 'ios-play';
     },
-    pauseAnime() {
-      explorer.playing = false;
+    forwardAnime() {
+      explorer.forward = !explorer.forward;
+      if (explorer.forward) this.forwardIcon = 'ios-arrow-dropleft';
+      else this.forwardIcon = 'ios-arrow-dropright';
     },
     paint() {
       if (this.wheelDelta !== 0) {

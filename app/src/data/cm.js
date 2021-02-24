@@ -5,7 +5,7 @@ var Sequelize = require('sequelize');
 class CM {
   constructor() {
     this.conns = {};
-    this.init('mouselet');
+    this.init('default');
   }
 
   async init(name) {
@@ -25,7 +25,7 @@ class CM {
   }
 
   get(name) {
-    return this.conns[name || 'mouselet'];
+    return this.conns[name || 'default'];
   }
 }
 
