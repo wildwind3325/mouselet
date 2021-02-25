@@ -2,61 +2,62 @@
   <div style="height: calc(100vh - 80px); overflow: auto;">
     <Form :label-width="150">
       <FormItem label="Base Dir">
-        <Input type="text" v-model="base_dir">
+        <Input type="text" v-model="kvs.base_dir">
         </Input>
       </FormItem>
       <FormItem label="Exhentai Proxy">
-        <Input type="text" v-model="eh_proxy_addr" placeholder="http://127.0.0.1:1080">
+        <Input type="text" v-model="kvs.eh_proxy_addr" placeholder="http://127.0.0.1:1080">
         </Input>
       </FormItem>
       <FormItem label="Exhentai Account">
-        <Input type="text" v-model="eh_account">
+        <Input type="text" v-model="kvs.eh_account">
         </Input>
       </FormItem>
       <FormItem label="Exhentai Password">
-        <Input type="password" v-model="eh_password">
+        <Input type="password" v-model="kvs.eh_password">
         </Input>
       </FormItem>
       <FormItem label="Pixiv Proxy">
-        <Input type="text" v-model="px_proxy_addr" placeholder="http://127.0.0.1:1080">
+        <Input type="text" v-model="kvs.px_proxy_addr" placeholder="http://127.0.0.1:1080">
         </Input>
       </FormItem>
       <FormItem label="Pixiv Account">
-        <Input type="text" v-model="px_account">
+        <Input type="text" v-model="kvs.px_account">
         </Input>
       </FormItem>
       <FormItem label="Pixiv Password">
-        <Input type="password" v-model="px_password">
+        <Input type="password" v-model="kvs.px_password">
         </Input>
       </FormItem>
       <FormItem label="Inkbunny Proxy">
-        <Input type="text" v-model="ib_proxy_addr" placeholder="http://127.0.0.1:1080">
+        <Input type="text" v-model="kvs.ib_proxy_addr" placeholder="http://127.0.0.1:1080">
         </Input>
       </FormItem>
       <FormItem label="Inkbunny Account">
-        <Input type="text" v-model="ib_account">
+        <Input type="text" v-model="kvs.ib_account">
         </Input>
       </FormItem>
       <FormItem label="Inkbunny Password">
-        <Input type="password" v-model="ib_password">
+        <Input type="password" v-model="kvs.ib_password">
         </Input>
       </FormItem>
       <FormItem label="Archive Single">
-        <Input type="number" v-model="archive_single">
+        <Input type="number" v-model="kvs.archive_single">
         </Input>
       </FormItem>
       <FormItem label="Archive Threshhold">
-        <Input type="number" v-model="archive_all">
+        <Input type="number" v-model="kvs.archive_all">
         </Input>
       </FormItem>
       <FormItem>
-        <Button type="primary" @click="onSubmit">Submit</Button>
+        <Button type="primary" :loading="submitting" @click="onSubmit">Submit</Button>
       </FormItem>
     </Form>
   </div>
 </template>
 
 <script>
+import config from '../api/config';
 export default {
   name: 'Config',
   props: {
@@ -65,22 +66,46 @@ export default {
   },
   data() {
     return {
-      base_dir: '',
-      eh_proxy_addr: '',
-      eh_account: '',
-      eh_password: '',
-      px_proxy_addr: '',
-      px_account: '',
-      px_password: '',
-      ib_proxy_addr: '',
-      ib_account: '',
-      ib_password: '',
-      archive_single: '4',
-      archive_all: '100'
+      kvs: {
+        base_dir: '',
+        eh_proxy_addr: '',
+        eh_account: '',
+        eh_password: '',
+        px_proxy_addr: '',
+        px_account: '',
+        px_password: '',
+        ib_proxy_addr: '',
+        ib_account: '',
+        ib_password: '',
+        archive_single: '4',
+        archive_all: '100'
+      },
+      submitting: false
     };
   },
+  mounted() {
+    for (let key in this.kvs) {
+      this.kvs[key] = config.get(key.toUpperCase());
+    }
+  },
   methods: {
-    onSubmit() {
+    async onSubmit() {
+      this.submitting = true;
+      try {
+        for (let key in this.kvs) {
+          if (config.get(key.toUpperCase()) !== this.kvs[key]) {
+            await this.$http.post('/api/common/config/save', {
+              name: key.toUpperCase(),
+              value: this.kvs[key]
+            });
+            config.set(key.toUpperCase(), this.kvs[key]);
+          }
+        }
+        this.$Message.success('Save done.');
+      } catch (err) {
+        this.$Message.error('Save failed: ' + err.message);
+      }
+      this.submitting = false;
     }
   }
 };

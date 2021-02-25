@@ -30,9 +30,7 @@ router.post('/config/save', async function (req, res, next) {
       name: req.body.name,
       value: req.body.value
     });
-    res.send({
-      success: true
-    });
+    res.send({ success: true });
   } catch (err) {
     res.send({
       success: false,

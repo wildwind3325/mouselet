@@ -75,7 +75,6 @@ export default {
     try {
       let res = await this.$http.post('/api/common/config/load');
       if (res.data.success) config.load(res.data.data);
-      console.log(res.data.data);
     } catch (err) { }
   },
   beforeDestroy() {
