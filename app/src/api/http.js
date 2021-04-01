@@ -61,6 +61,15 @@ var http = {
         }
       });
     });
+  },
+  findCookie(cookies, name) {
+    if (!cookies || cookies.length === 0) return '';
+    for (let i = 0; i < cookies.length; i++) {
+      if (cookies[i].startsWith(name)) {
+        return cookies[i].substring(cookies[i].indexOf('=') + 1, cookies[i].indexOf(';'));
+      }
+    }
+    return '';
   }
 };
 

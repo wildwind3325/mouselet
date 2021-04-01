@@ -32,7 +32,7 @@
       <FormItem label="Progress">
         <Progress :percent="0" :status="status" />
       </FormItem>
-      <FormItem label="Message">
+      <FormItem>
         {{ message }}
       </FormItem>
     </Form>
@@ -55,7 +55,7 @@ export default {
       indexing: false,
       medium: false,
       working: false,
-      status: 'active',
+      status: '',
       message: 'Ready'
     };
   },
