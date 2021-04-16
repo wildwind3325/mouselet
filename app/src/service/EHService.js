@@ -1,4 +1,5 @@
 var cheerio = require('cheerio');
+var fs = require('fs');
 var http = require('../api/http');
 
 class EHService {
@@ -36,35 +37,94 @@ class EHService {
 
   async init(gallery, cookie, proxy) {
     try {
-      let res = http.get(gallery, {
-        cookie: cookie,
+      let res = await http.get(gallery, {
+        headers: { Cookie: cookie },
         proxy: proxy
       });
-      let pg = cheerio.load(res.body);
-      let total = parseInt(pg('td.gdt2').eq(5).text().split(' ')[0]);
+      let page = cheerio.load(res.body);
+      let total = parseInt(page('td.gdt2').eq(5).text().split(' ')[0]);
       let mask = Math.max(total.toString().length, 2);
-      let page = 0;
+      let p = 0;
       let list = new Array();
       while (true) {
-        if (page > 0) {
-          res = await http.get(gallery + '?p=' + page, {
-            cookie: cookie,
+        if (p > 0) {
+          res = await http.get(gallery + '?p=' + p, {
+            headers: { Cookie: cookie },
             proxy: proxy
           });
-          pg = cheerio.load(res.body);
+          page = cheerio.load(res.body);
         }
-        pg('div#gdt').find('a').each((i, elem) => {
-          list.push(cheerio(elem).attr('href'));
+        page('div#gdt').find('a').each((i, elem) => {
+          list.push({ url: cheerio(elem).attr('href') });
         });
-        let pager = pg('p.gpc').first().text().split(' ');
+        let pager = page('p.gpc').first().text().split(' ');
         if (pager[3] == pager[5]) {
           break;
         }
-        page++;
+        p++;
+      }
+      return {
+        success: true,
+        list: list
+      };
+    } catch (err) {
+      return {
+        success: false,
+        message: err.message
+      };
+    }
+  }
+
+  async download(path, item, prefix, medium, cookie, proxy) {
+    try {
+      if (!item.image) {
+        let res = await http.get(item.url, {
+          headers: { Cookie: cookie },
+          proxy: proxy
+        });
+        let page = cheerio.load(res.body);
+        let elem = page('div#i7 a');
+        if (elem.length == 0 || medium) {
+          item.image = page('img#img').attr('src');
+          let name = page('div#i4').find('div').first().text();
+          item.name = prefix + name.substring(0, name.indexOf(' '));
+        } else {
+          item.image = elem.first().attr('href').replace('&amp;', '&');
+        }
+      }
+      if (!item.size) {
+        let res = await http.get(item.image, {
+          method: 'HEAD',
+          headers: { Cookie: cookie },
+          proxy: proxy
+        });
+        if (!item.name) {
+          let name = res.headers['content-disposition'];
+          item.name = prefix + name.substring(name.indexOf('=') + 1);
+        }
+        item.size = parseInt(res.headers['content-length']);
+      }
+      let data = await http.download(item.image, {
+        headers: { Cookie: cookie },
+        proxy: proxy
+      });
+      if (data.body.length !== item.size) {
+        return {
+          success: false,
+          item: item,
+          message: 'Download failed.'
+        };
+      } else {
+        fs.writeFileSync(path + item.name, data.body);
+        return {
+          success: true,
+          item: item
+        };
       }
     } catch (err) {
       return {
         success: false,
+        item: item,
         message: err.message
       };
     }
