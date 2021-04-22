@@ -92,16 +92,23 @@ export default {
     async onSubmit() {
       this.submitting = true;
       try {
+        let names = [], values = [];
         for (let key in this.kvs) {
           if (config.get(key.toUpperCase()) !== this.kvs[key]) {
-            await this.$http.post('/api/common/config/save', {
-              name: key.toUpperCase(),
-              value: this.kvs[key]
-            });
-            config.set(key.toUpperCase(), this.kvs[key]);
+            names.push(key.toUpperCase());
+            values.push(this.kvs[key]);
           }
         }
-        this.$Message.success('Save done.');
+        let res = await this.$http.post('/api/common/config/save', {
+          names: names,
+          values: values
+        });
+        if (!res.data.success) {
+          this.$Message.error('Save failed: ' + res.data.message);
+        } else {
+          for (let i = 0; i < names.length; i++) config.set(names[i], values[i]);
+          this.$Message.success('Save done.');
+        }
       } catch (err) {
         this.$Message.error('Save failed: ' + err.message);
       }

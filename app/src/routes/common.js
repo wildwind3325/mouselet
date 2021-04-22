@@ -26,10 +26,12 @@ router.post('/config/load', async function (req, res, next) {
 router.post('/config/save', async function (req, res, next) {
   try {
     let db = new DB();
-    await db.executeUpdate('update [config] set [value] = :value where [name] = :name', {
-      name: req.body.name,
-      value: req.body.value
-    });
+    for (let i = 0; i < req.body.names.length; i++) {
+      await db.executeUpdate('update [config] set [value] = :value where [name] = :name', {
+        name: req.body.names[i],
+        value: req.body.values[i]
+      });
+    }
     res.send({ success: true });
   } catch (err) {
     res.send({

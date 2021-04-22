@@ -1,5 +1,6 @@
 var cheerio = require('cheerio');
 var fs = require('fs');
+var path = require('path');
 var http = require('../api/http');
 
 class EHService {
@@ -35,20 +36,18 @@ class EHService {
     }
   }
 
-  async init(gallery, cookie, proxy) {
+  async init(url, cookie, proxy) {
     try {
-      let res = await http.get(gallery, {
+      let res = await http.get(url, {
         headers: { Cookie: cookie },
         proxy: proxy
       });
       let page = cheerio.load(res.body);
-      let total = parseInt(page('td.gdt2').eq(5).text().split(' ')[0]);
-      let mask = Math.max(total.toString().length, 2);
       let p = 0;
       let list = new Array();
       while (true) {
         if (p > 0) {
-          res = await http.get(gallery + '?p=' + p, {
+          res = await http.get(url + '?p=' + p, {
             headers: { Cookie: cookie },
             proxy: proxy
           });
@@ -104,6 +103,13 @@ class EHService {
         }
         item.size = parseInt(res.headers['content-length']);
       }
+      let fullname = path.join(path, item.name);
+      if (fs.existsSync(fullname)) {
+        return {
+          success: true,
+          item: item
+        };
+      }
       let data = await http.download(item.image, {
         headers: { Cookie: cookie },
         proxy: proxy
@@ -115,7 +121,7 @@ class EHService {
           message: 'Download failed.'
         };
       } else {
-        fs.writeFileSync(path + item.name, data.body);
+        fs.writeFileSync(fullname, data.body);
         return {
           success: true,
           item: item
