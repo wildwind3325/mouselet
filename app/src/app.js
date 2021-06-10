@@ -9,7 +9,7 @@ require('./api/enhance');
 var router = require('./routes/index');
 
 var app = express();
-if (process.env.NODE_ENV !== 'production') {
+if (!process.env.NODE_ENV) {
   app.use(logger('dev'));
 } else {
   var accessLogStream = FileStreamRotator.getStream({
